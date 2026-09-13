@@ -29,7 +29,7 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 
 ## 3. Vídeo Explicativo e Distribuição de Responsabilidades
 
-* 🎥 **Assistir à Apresentação:** LINKLINK
+* 🎥 **Assistir à Apresentação:** [****](https://youtu.be/F8k4WEhj0Kg?is=SAWOn4MUsja3hRMI)
 
 ### Divisão de Tarefas da Equipe:
 * **Beatriz Assis:** Prototipação das telas do fluxo de cadastro via número de telefone e plano de assinatura, e design da aplicação (paleta de cores, elementos gráficos, tipografia e plataforma).
