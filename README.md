@@ -35,3 +35,7 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 * **Beatriz Assis:** Prototipação das telas do fluxo de cadastro via número de telefone e plano de assinatura, e design da aplicação (paleta de cores, elementos gráficos, tipografia e plataforma).
 * **Matheus Medeiros:** Levantamento das classes candidatas, design da aplicação (logotipo) e prototipação das telas de endereço, pagamento, confirmação do pedido e status do pedido.
 * **Caroline Lee:** Gravação/edição do vídeo, elaboração do roteiro e prototipação da sequencia de preferência alimentar, prato principal, acompanhamento, sobremesa e resumo do pedido.
+
+## 4. Diagrama de Domínio:
+<img width="1600" height="491" alt="image" src="https://github.com/user-attachments/assets/85ae7a9a-0640-42c4-ae9b-7cc28b9accf8" />
+
