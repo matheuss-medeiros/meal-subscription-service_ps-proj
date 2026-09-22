@@ -37,5 +37,6 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 * **Caroline Lee:** Gravação/edição do vídeo, elaboração do roteiro e prototipação da sequencia de preferência alimentar, prato principal, acompanhamento, sobremesa e resumo do pedido.
 
 ## 4. Diagrama de Domínio:
-<img width="1600" height="491" alt="image" src="https://github.com/user-attachments/assets/85ae7a9a-0640-42c4-ae9b-7cc28b9accf8" />
+<img width="2116" height="650" alt="Untitled Diagram" src="https://github.com/user-attachments/assets/07e6988e-2baa-4523-a905-8aad276301e9" />
+
 
