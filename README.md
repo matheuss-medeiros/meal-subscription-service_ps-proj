@@ -40,3 +40,61 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 <img width="2116" height="650" alt="Untitled Diagram" src="https://github.com/user-attachments/assets/07e6988e-2baa-4523-a905-8aad276301e9" />
 
 
+# Wiki N2 - Meal Subscription Service
+
+# Diagrama de Sequência 1 — Autenticação por SMS
+
+**Escopo:** telas 1 e 2, passos 1–5, alternativo FA1. **Estímulos:** `informarCelular(celular)` e `informarCodigo(codigo)`. Os retornos de apresentação são respostas do sistema, não estímulos.
+
+```mermaid
+sequenceDiagram
+ autonumber
+ actor Usuario as Assinante
+ participant Tela as <<boundary>> TelaAutenticacao
+ participant Ctrl as <<control>> ControladorAssinatura
+ participant Repo as <<entity>> RepositorioAssinantes
+ participant A as <<entity>> Assinante
+ participant Cod as <<entity>> CodigoConfirmacao
+ participant SMS as <<boundary>> ServicoSMS
+ participant Catalogo as <<entity>> CatalogoPlanos
+ Usuario->>Tela: informarCelular(celular)
+ Tela->>Ctrl: informarCelular(celular): void
+ Ctrl->>Repo: buscarPorCelular(celular): Assinante
+ Repo-->>Ctrl: assinanteEncontrado (ou nenhum)
+ alt Assinante nao encontrado
+  create participant NovoA as <<entity>> NovoAssinante
+  Ctrl->>NovoA: criarAssinante(celular)
+  Ctrl->>Repo: salvar(assinante): void
+ end
+ create participant NovoCod as <<entity>> NovoCodigoConfirmacao
+ Ctrl->>NovoCod: criarCodigoConfirmacao(): CodigoConfirmacao
+ Ctrl->>SMS: enviarCodigo(celular, codigoGerado): void
+ Ctrl-->>Tela: solicitarCodigo(): void
+ Tela-->>Usuario: exibirTelaCodigo()
+ Usuario->>Tela: informarCodigo(codigo)
+ Tela->>Ctrl: informarCodigo(codigo): boolean
+ Ctrl->>NovoCod: validar(codigo): boolean
+ NovoCod-->>Ctrl: valido
+ alt Codigo valido
+  Ctrl->>Catalogo: listarPlanos(): Lista~PlanoAssinatura~
+  Catalogo-->>Ctrl: planos
+  Ctrl-->>Tela: apresentarPlanos(planos): void
+  Tela-->>Usuario: exibirPlanos(planos)
+ else Codigo invalido - FA1
+  Ctrl->>NovoCod: registrarTentativa(): Integer
+  NovoCod-->>Ctrl: tentativas
+  alt tentativas menor que 3
+   Ctrl-->>Tela: apresentarErroCodigo(): void
+   Tela-->>Usuario: solicitarNovaTentativa()
+   Note over Usuario,NovoCod: Repetir informarCodigo e validar a cada nova tentativa
+  else tentativas igual a 3
+   Ctrl-->>Tela: encerrarValidacao(): void
+   Tela-->>Usuario: solicitarNovoCodigo()
+  end
+ end
+```
+
+**Nota de fidelidade:** `RepositorioAssinantes`, `ServicoSMS` e os métodos são elementos de projeto inferidos para concretizar os passos. O guia determina a busca/criação do assinante e o envio por SMS, mas não fixa o nome técnico do serviço ou repositório. A Pessoa 3 deve usar os mesmos nomes no diagrama de classes de projeto.
+
+
+
