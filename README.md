@@ -41,6 +41,23 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 
 # Wiki N2 - Meal Subscription Service
 
+# Tabela de Estímulos
+
+| # | Estímulo | Tela do protótipo | Passos do fluxo | Alternativo |
+|---|----------|-------------------|-----------------|-------------|
+| 1 | `informarCelular` | iPhone 17 - 1 | 1–2 | – |
+| 2 | `informarCodigo` | iPhone 17 - 6 | 3–5 | FA1 |
+| 3 | `selecionarPlano` | iPhone 17 - 3 | 6–7 | – |
+| 4 | `informarPreferencias` | iPhone 17 - 4 | 8–10 | – |
+| 5 | `selecionarPratosPrincipais` | iPhone 17 - 5 | 11–13 | FA2 |
+| 6 | `selecionarAcompanhamentos` | iPhone 17 - 7 | 14–16 | FA2 |
+| 7 | `selecionarSobremesas` | iPhone 17 - 8 (resumo na 9) | 17–20 | FA2 |
+| 8 | `informarEnderecoEntrega` | iPhone 17 - 10 e 11 | 21–24 | – |
+| 9 | `informarDadosCartao` | iPhone 17 - 12 e 13 | 25 | – |
+| 10 | `confirmarPedido` | iPhone 17 - 17 (resultado em 18 e 19) | 26–32 | FA3 |
+
+---
+
 # Diagrama de Sequência 1 — Autenticação por SMS
 
 ```mermaid
@@ -139,6 +156,151 @@ sequenceDiagram
 ```
 
 
+
+# Diagrama de Sequência 3 — Montagem do Pedido
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Assinante
+    participant Tela as <<boundary>> TelaMontagemPedido
+    participant Ctrl as <<control>> ControladorAssinatura
+    participant A as <<entity>> Assinante
+    participant S as <<entity>> Assinatura
+    participant Plano as <<entity>> PlanoAssinatura
+    participant C as <<entity>> Cardapio
+    participant IP as <<entity>> ItemPedido
+
+    Note over Usuario,Ctrl: Estimulo 1 - Pratos principais
+    Usuario->>Tela: selecionarPratosPrincipais(itens)
+    Tela->>Ctrl: selecionarPratosPrincipais(itens): void
+
+    Ctrl->>A: gerarPedido(): Pedido
+    create participant P as <<entity>> Pedido
+    A->>P: criarPedido(): Pedido
+    P-->>A: pedido
+    A-->>Ctrl: pedido
+
+    Ctrl->>S: validarQuantidade(tipoRefeicao, quantidade): boolean
+    S->>Plano: getQuantidadeRefeicoes(): Integer
+    Plano-->>S: limite
+    S-->>Ctrl: valido
+
+    alt Quantidade dentro do limite do plano
+        loop Para cada prato selecionado
+            Ctrl->>C: buscarItem(idItem): ItemCardapio
+            C-->>Ctrl: itemCardapio
+            Ctrl->>P: adicionarItem(itemCardapio, quantidade): void
+            P->>IP: criarItemPedido(itemCardapio, quantidade): ItemPedido
+        end
+        Ctrl->>A: getRestricoes(): Lista~RestricaoAlimentar~
+        A-->>Ctrl: restricoes
+        Ctrl->>C: listarAcompanhamentos(restricoes): Lista~ItemCardapio~
+        C-->>Ctrl: acompanhamentos
+        Ctrl-->>Tela: apresentarAcompanhamentos(acompanhamentos): void
+        Tela-->>Usuario: exibirAcompanhamentos(acompanhamentos)
+    else Quantidade acima do limite - FA2
+        Ctrl->>S: getLimiteRefeicoes(): Integer
+        S-->>Ctrl: limite
+        Ctrl-->>Tela: apresentarErroLimite(limite): void
+        Tela-->>Usuario: solicitarAjusteSelecao(limite)
+        Note over Usuario,Ctrl: Apos o ajuste, o fluxo retorna a selecao de pratos principais
+    end
+
+    Note over Usuario,Ctrl: Estimulo 2 - Acompanhamentos
+    Usuario->>Tela: selecionarAcompanhamentos(itens)
+    Tela->>Ctrl: selecionarAcompanhamentos(itens): void
+    Ctrl->>S: validarQuantidade(tipoRefeicao, quantidade): boolean
+    S-->>Ctrl: valido
+
+    alt Quantidade dentro do limite do plano
+        loop Para cada acompanhamento selecionado
+            Ctrl->>C: buscarItem(idItem): ItemCardapio
+            C-->>Ctrl: itemCardapio
+            Ctrl->>P: adicionarItem(itemCardapio, quantidade): void
+            P->>IP: criarItemPedido(itemCardapio, quantidade): ItemPedido
+        end
+        Ctrl->>A: getRestricoes(): Lista~RestricaoAlimentar~
+        A-->>Ctrl: restricoes
+        Ctrl->>C: listarSobremesas(restricoes): Lista~ItemCardapio~
+        C-->>Ctrl: sobremesas
+        Ctrl-->>Tela: apresentarSobremesas(sobremesas): void
+        Tela-->>Usuario: exibirSobremesas(sobremesas)
+    else Quantidade acima do limite - FA2
+        Ctrl->>S: getLimiteRefeicoes(): Integer
+        S-->>Ctrl: limite
+        Ctrl-->>Tela: apresentarErroLimite(limite): void
+        Tela-->>Usuario: solicitarAjusteSelecao(limite)
+        Note over Usuario,Ctrl: Apos o ajuste, o fluxo retorna a selecao de acompanhamentos
+    end
+
+    Note over Usuario,Ctrl: Estimulo 3 - Sobremesas
+    Usuario->>Tela: selecionarSobremesas(itens)
+    Tela->>Ctrl: selecionarSobremesas(itens): void
+    Ctrl->>S: validarQuantidade(tipoRefeicao, quantidade): boolean
+    S-->>Ctrl: valido
+
+    alt Quantidade dentro do limite do plano
+        loop Para cada sobremesa selecionada
+            Ctrl->>C: buscarItem(idItem): ItemCardapio
+            C-->>Ctrl: itemCardapio
+            Ctrl->>P: adicionarItem(itemCardapio, quantidade): void
+            P->>IP: criarItemPedido(itemCardapio, quantidade): ItemPedido
+        end
+        Ctrl->>P: obterResumo(): Lista~ItemPedido~
+        P-->>Ctrl: itensPedido
+        Ctrl-->>Tela: apresentarResumoPedido(itensPedido): void
+        Tela-->>Usuario: exibirResumoPedido(itensPedido)
+        Ctrl->>A: getEnderecos(): Lista~Endereco~
+        A-->>Ctrl: enderecos
+        Ctrl-->>Tela: solicitarEnderecoEntrega(enderecos): void
+        Tela-->>Usuario: exibirEnderecos(enderecos)
+    else Quantidade acima do limite - FA2
+        Ctrl->>S: getLimiteRefeicoes(): Integer
+        S-->>Ctrl: limite
+        Ctrl-->>Tela: apresentarErroLimite(limite): void
+        Tela-->>Usuario: solicitarAjusteSelecao(limite)
+        Note over Usuario,Ctrl: Apos o ajuste, o fluxo retorna a selecao de sobremesas
+    end
+```
+
+---
+
+# Diagrama de Sequência 4 — Endereço de Entrega
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Assinante
+    participant Tela as <<boundary>> TelaEndereco
+    participant Ctrl as <<control>> ControladorAssinatura
+    participant A as <<entity>> Assinante
+    participant E as <<entity>> Endereco
+    participant P as <<entity>> Pedido
+    participant S as <<entity>> Assinatura
+
+    Usuario->>Tela: informarEnderecoEntrega(endereco)
+    Tela->>Ctrl: informarEnderecoEntrega(endereco): void
+
+    alt Endereco novo
+        Ctrl->>A: adicionarEndereco(dadosEndereco): Endereco
+        A->>E: criarEndereco(dadosEndereco): Endereco
+        E-->>A: endereco
+        A-->>Ctrl: endereco
+    else Endereco ja cadastrado
+        Ctrl->>A: buscarEndereco(idEndereco): Endereco
+        A-->>Ctrl: endereco
+    end
+
+    Ctrl->>P: definirEnderecoEntrega(endereco): void
+    Ctrl->>S: alterarStatus(AGUARDANDO_PGMT): void
+    Note over S: status = AGUARDANDO_PGMT
+
+    Ctrl->>P: calcularValorTotal(): Float
+    P-->>Ctrl: valorTotal
+    Ctrl-->>Tela: solicitarDadosPagamento(valorTotal): void
+    Tela-->>Usuario: exibirTelaPagamento(valorTotal)
+```
 ## Diagrama de Domínio Corrigido — N2
 
 ```mermaid
