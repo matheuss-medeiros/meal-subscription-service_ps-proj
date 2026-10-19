@@ -301,6 +301,358 @@ sequenceDiagram
     Ctrl-->>Tela: solicitarDadosPagamento(valorTotal): void
     Tela-->>Usuario: exibirTelaPagamento(valorTotal)
 ```
+
+---
+# Diagrama de Sequência 5 — Pagamento e Confirmação
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Usuario as Assinante
+    participant Tela as <<boundary>> TelaPagamento
+    participant Ctrl as <<control>> ControladorAssinatura
+    participant A as <<entity>> Assinante
+    participant S as <<entity>> Assinatura
+    participant P as <<entity>> Pedido
+    participant Op as <<boundary>> OperadoraCartaoCredito
+    participant RepoAssin as <<entity>> RepositorioAssinaturas
+
+    Usuario->>Tela: informarDadosCartao(dadosCartao, dadosEndCobranca)
+    Tela->>Ctrl: informarDadosCartao(dadosCartao, dadosEndCobranca): void
+
+    create participant EndCob as <<entity>> Endereco
+    Ctrl->>EndCob: criarEndereco(dadosEndCobranca): Endereco
+
+    create participant Cartao as <<entity>> CartaoCredito
+    Ctrl->>Cartao: criarCartao(dadosCartao, endCobranca): CartaoCredito
+    Ctrl->>A: adicionarCartao(cartao): void
+
+    Ctrl-->>Tela: apresentarResumoConfirmacao(): void
+    Tela-->>Usuario: exibirResumoPedido()
+
+    Usuario->>Tela: confirmarPedido()
+    Tela->>Ctrl: confirmarPedido(): void
+
+    Ctrl->>S: calcularValorTotal(): Float
+    S-->>Ctrl: valorTotal
+
+    create participant Pgmt as <<entity>> Pagamento
+    Ctrl->>Pgmt: criarPagamento(valorTotal, cartao): Pagamento
+    Ctrl->>S: registrarPagamento(pgmt): void
+
+    Ctrl->>Op: solicitarAutorizacao(cartao, valorTotal): String
+    Op-->>Ctrl: codigoAutorizacao (ou vazio)
+
+    alt Pagamento autorizado (codigoAutorizacao valido)
+        Ctrl->>Pgmt: aprovarPagamento(codigoAutorizacao): void
+        Ctrl->>S: ativarAssinatura(): void
+        Ctrl->>S: gerarProtocolo(): String
+        Ctrl->>S: calcularPrevisaoPrimeiraEntrega(): Date
+        Ctrl->>P: atualizarStatus(EM_PREPARO): void
+        Ctrl->>RepoAssin: salvar(assinatura): void
+        Ctrl-->>Tela: apresentarConfirmacao(protocolo, previsaoEntrega): void
+        Tela-->>Usuario: exibirTelaSucesso(protocolo, previsaoEntrega)
+    else Pagamento nao autorizado - FA3
+        Ctrl->>Pgmt: recusarPagamento(): void
+        Ctrl->>S: atualizarStatus(ERRO_PGMT): void
+        Ctrl-->>Tela: apresentarErroPagamento(): void
+        Tela-->>Usuario: solicitarNovoMeioPagamento()
+    end
+```
+
+---
+# Diagrama de Classes de Projeto (Completo)
+```mermaid
+classDiagram
+    direction TB
+
+    %% ==========================================
+    %% CAMADA DE CONTROLE E SERVIÇOS EXTERNOS
+    %% ==========================================
+    class ControladorAssinatura {
+        <<control>>
+        %% Diagrama 1
+        +informarCelular(celular: String) void
+        +solicitarCodigo() void
+        +informarCodigo(codigo: String) boolean
+        +apresentarPlanos(planos: Lista~PlanoAssinatura~) void
+        +apresentarErroCodigo() void
+        +encerrarValidacao() void
+        %% Diagrama 2
+        +selecionarPlano(idPlano: Integer) void
+        +apresentarPreferencias() void
+        +informarPreferencias(restricoes: Lista~TipoRestricaoAlimentar~) void
+        +apresentarPratosPrincipais(pratosFiltrados: Lista~ItemCardapio~) void
+        %% Diagrama 3
+        +selecionarPratosPrincipais(itens: Lista) void
+        +apresentarAcompanhamentos(acompanhamentos: Lista~ItemCardapio~) void
+        +selecionarAcompanhamentos(itens: Lista) void
+        +apresentarSobremesas(sobremesas: Lista~ItemCardapio~) void
+        +selecionarSobremesas(itens: Lista) void
+        +apresentarResumoPedido(itensPedido: Lista~ItemPedido~) void
+        +solicitarEnderecoEntrega(enderecos: Lista~Endereco~) void
+        +apresentarErroLimite(limite: Integer) void
+        %% Diagrama 4
+        +informarEnderecoEntrega(endereco: Map) void
+        +solicitarDadosPagamento(valorTotal: Float) void
+        %% Diagrama 5
+        +informarDadosCartao(dadosCartao: Map, dadosEndCobranca: Map) void
+        +apresentarResumoConfirmacao() void
+        +confirmarPedido() void
+        +apresentarConfirmacao(protocolo: String, previsaoEntrega: Date) void
+        +apresentarErroPagamento() void
+    }
+
+    class ServicoSMS {
+        <<boundary>>
+        +enviarCodigo(celular: String, codigoGerado: String) void
+    }
+
+    class OperadoraCartaoCredito {
+        <<boundary>>
+        +solicitarAutorizacao(cartao: CartaoCredito, valorTotal: Float) String
+    }
+
+    %% ==========================================
+    %% REPOSITÓRIOS E CATÁLOGOS
+    %% ==========================================
+    class RepositorioAssinantes {
+        <<entity>>
+        +buscarPorCelular(celular: String) Assinante
+        +criarAssinante(celular: String) Assinante
+        +salvar(assinante: Assinante) void
+    }
+
+    class CatalogoPlanos {
+        <<entity>>
+        +listarPlanos() Lista~PlanoAssinatura~
+        +buscarPlano(idPlano: Integer) PlanoAssinatura
+    }
+
+    class RepositorioAssinaturas {
+        <<entity>>
+        +salvar(assinatura: Assinatura) void
+        +buscarPorProtocolo(protocolo: String) Assinatura
+    }
+
+    %% ==========================================
+    %% ENTIDADES DE DOMÍNIO (COM MÉTODOS DE PROJETO)
+    %% ==========================================
+    class Assinante {
+        -nome: String
+        -sobrenome: String
+        -dataNascimento: Date
+        -celular: String
+        +adicionarRestricao(restricao: RestricaoAlimentar) void
+        +getRestricoes() Lista~RestricaoAlimentar~
+        +gerarPedido() Pedido
+        +adicionarEndereco(dadosEndereco: Map) Endereco
+        +buscarEndereco(idEndereco: Integer) Endereco
+        +getEnderecos() Lista~Endereco~
+        +adicionarCartao(cartao: CartaoCredito) void
+    }
+
+    class CodigoConfirmacao {
+        -codigo: String
+        -tentativas: Integer
+        -validado: Boolean
+        +criarCodigoConfirmacao() CodigoConfirmacao
+        +validar(codigo: String) boolean
+        +registrarTentativa() Integer
+    }
+
+    class Assinatura {
+        -valorCobrado: Float
+        -dataInicio: Date
+        -dataFim: Date
+        -status: StatusAssinatura
+        -protocolo: String
+        -previsaoPrimeiraEntrega: Date
+        +registrarPlano(plano: PlanoAssinatura) void
+        +registrarPacoteDias(dias: Integer) void
+        +validarQuantidade(tipoRefeicao: TipoRefeicao, quantidade: Integer) boolean
+        +getLimiteRefeicoes() Integer
+        +alterarStatus(novoStatus: StatusAssinatura) void
+        +atualizarStatus(novoStatus: StatusAssinatura) void
+        +calcularValorTotal() Float
+        +registrarPagamento(pgmt: Pagamento) void
+        +ativarAssinatura() void
+        +gerarProtocolo() String
+        +calcularPrevisaoPrimeiraEntrega() Date
+    }
+
+    class PlanoAssinatura {
+        -nome: String
+        -quantidadeRefeicoes: Integer
+        -periodicidade: String
+        -valor: Float
+        +getQuantidadeRefeicoes() Integer
+        +getValor() Float
+    }
+
+    class RestricaoAlimentar {
+        -tipo: TipoRestricaoAlimentar
+        +criarRestricao(tipo: TipoRestricaoAlimentar) RestricaoAlimentar
+    }
+
+    class Cardapio {
+        +listarPratosPrincipais(plano: PlanoAssinatura, restricoes: Lista~RestricaoAlimentar~) Lista~ItemCardapio~
+        +listarAcompanhamentos(restricoes: Lista~RestricaoAlimentar~) Lista~ItemCardapio~
+        +listarSobremesas(restricoes: Lista~RestricaoAlimentar~) Lista~ItemCardapio~
+        +buscarItem(idItem: Integer) ItemCardapio
+    }
+
+    class ItemCardapio {
+        -nomeItem: String
+        -tipoRefeicao: TipoRefeicao
+        -restritoPreferenciaAlimentar: TipoRestricaoAlimentar[]
+    }
+
+    class Pedido {
+        -dataPedido: Date
+        -status: StatusPedido
+        +criarPedido() Pedido
+        +adicionarItem(itemCardapio: ItemCardapio, quantidade: Integer) void
+        +obterResumo() Lista~ItemPedido~
+        +definirEnderecoEntrega(endereco: Endereco) void
+        +calcularValorTotal() Float
+        +atualizarStatus(novoStatus: StatusPedido) void
+    }
+
+    class ItemPedido {
+        -quantidade: Integer
+        +criarItemPedido(itemCardapio: ItemCardapio, quantidade: Integer) ItemPedido
+    }
+
+    class Refeicao {
+        -id: Integer
+        +adicionarItem(item: ItemCardapio) void
+    }
+
+    class Endereco {
+        -logradouro: String
+        -numero: String
+        -bairro: String
+        -cidade: String
+        -uf: char[2]
+        -cep: String
+        +criarEndereco(dadosEndereco: Map) Endereco
+    }
+
+    class CartaoCredito {
+        -nomeTitular: String
+        -numero: String
+        -codigoSeguranca: String
+        -opcaoPgmt: OpcaoPgmt
+        +criarCartao(dadosCartao: Map, endCobranca: Endereco) CartaoCredito
+    }
+
+    class Pagamento {
+        -dataHora: Date
+        -valorPago: Float
+        -codigoAutorizacao: String
+        -statusPgmt: StatusPgmt
+        +criarPagamento(valorTotal: Float, cartao: CartaoCredito) Pagamento
+        +aprovarPagamento(codigoAutorizacao: String) void
+        +recusarPagamento() void
+    }
+
+    %% ==========================================
+    %% ENUMERAÇÕES
+    %% ==========================================
+    class TipoRestricaoAlimentar {
+        <<enumeration>>
+        NA
+        VEGETARIANO
+        VEGANO
+        S_LACTOSE
+        S_GLUTEM
+    }
+
+    class TipoRefeicao {
+        <<enumeration>>
+        PRATO_PRINCIPAL
+        ACOMPANHAMENTO
+        SOBREMESA
+    }
+
+    class StatusAssinatura {
+        <<enumeration>>
+        AGUARDANDO_PGMT
+        ERRO_PGMT
+        CONFIRMADO_PGMT
+        ATIVO
+        INATIVO
+        CANCELADO
+    }
+
+    class StatusPedido {
+        <<enumeration>>
+        EM_PREPARO
+        ENVIADO_ENTREGA
+        EM_ROTA
+        ENTREGUE
+        TENTATIVA_ENTREGA_MAL_S
+    }
+
+    class OpcaoPgmt {
+        <<enumeration>>
+        VR
+        VA
+        CREDITO
+    }
+
+    class StatusPgmt {
+        <<enumeration>>
+        PENDENTE
+        APROVADO
+        RECUSADO
+    }
+
+    %% ==========================================
+    %% RELACIONAMENTOS DE PROJETO E NAVEGABILIDADE
+    %% ==========================================
+    ControladorAssinatura --> RepositorioAssinantes : usa
+    ControladorAssinatura --> CatalogoPlanos : usa
+    ControladorAssinatura --> RepositorioAssinaturas : usa
+    ControladorAssinatura --> ServicoSMS : envia SMS
+    ControladorAssinatura --> OperadoraCartaoCredito : solicita autorizacao
+    ControladorAssinatura --> Cardapio : consulta
+    ControladorAssinatura ..> CodigoConfirmacao : <<create>>
+    ControladorAssinatura ..> RestricaoAlimentar : <<create>>
+    ControladorAssinatura ..> Pagamento : <<create>>
+    ControladorAssinatura ..> CartaoCredito : <<create>>
+    ControladorAssinatura ..> Endereco : <<create>>
+
+    RepositorioAssinantes "1" o-- "0..*" Assinante : gerencia
+    CatalogoPlanos "1" o-- "1..*" PlanoAssinatura : contem
+    RepositorioAssinaturas "1" o-- "0..*" Assinatura : armazena
+
+    Assinante "1" --> "0..*" Endereco : possui
+    Assinante "1" --> "0..1" Assinatura : possui
+    Assinante "1" --> "0..*" CartaoCredito : possui
+    Assinante "1" --> "1..*" Pedido : gera
+    Assinante "1" --> "0..*" CodigoConfirmacao : codigo SMS
+    Assinante "1" --> "0..*" RestricaoAlimentar : preferencias
+
+    Assinatura "0..*" --> "1" PlanoAssinatura : contrato de
+    Assinatura "1" --> "1..*" Pagamento : pagamento independente
+
+    Pagamento "0..*" --> "1" OperadoraCartaoCredito : autorizacao
+    Pagamento "0..*" --> "1" CartaoCredito : cobrado em
+
+    Cardapio "1" o-- "1..*" ItemCardapio : apresenta
+
+    Pedido "1" *-- "1..*" Refeicao : possui
+    Refeicao "0..*" o-- "2..3" ItemCardapio : possui
+
+    Pedido "1" *-- "1..*" ItemPedido : inclui
+    ItemPedido "0..*" --> "1" ItemCardapio : referencia
+
+    Pedido "0..*" --> "1" Endereco : endereco de entrega
+    CartaoCredito "0..*" --> "1" Endereco : endereco de cobranca
+```
+
+
 ## Diagrama de Domínio Corrigido — N2
 
 ```mermaid
