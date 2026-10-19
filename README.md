@@ -45,16 +45,16 @@ O storyboard ilustra o fluxo ideal do usuário na plataforma:
 
 | # | Estímulo | Tela do protótipo | Passos do fluxo | Alternativo |
 |---|----------|-------------------|-----------------|-------------|
-| 1 | `informarCelular` | iPhone 17 - 1 | 1–2 | – |
-| 2 | `informarCodigo` | iPhone 17 - 6 | 3–5 | FA1 |
-| 3 | `selecionarPlano` | iPhone 17 - 3 | 6–7 | – |
-| 4 | `informarPreferencias` | iPhone 17 - 4 | 8–10 | – |
-| 5 | `selecionarPratosPrincipais` | iPhone 17 - 5 | 11–13 | FA2 |
-| 6 | `selecionarAcompanhamentos` | iPhone 17 - 7 | 14–16 | FA2 |
-| 7 | `selecionarSobremesas` | iPhone 17 - 8 (resumo na 9) | 17–20 | FA2 |
-| 8 | `informarEnderecoEntrega` | iPhone 17 - 10 e 11 | 21–24 | – |
-| 9 | `informarDadosCartao` | iPhone 17 - 12 e 13 | 25 | – |
-| 10 | `confirmarPedido` | iPhone 17 - 17 (resultado em 18 e 19) | 26–32 | FA3 |
+| 1 | informarCelular | iPhone 17 - 1 | 1–2 | – |
+| 2 | informarCodigo | iPhone 17 - 6 | 3–5 | FA1 |
+| 3 | selecionarPlano | iPhone 17 - 3 | 6–7 | – |
+| 4 | informarPreferencias | iPhone 17 - 4 | 8–10 | – |
+| 5 | selecionarPratosPrincipais | iPhone 17 - 5 | 11–13 | FA2 |
+| 6 | selecionarAcompanhamentos | iPhone 17 - 7 | 14–16 | FA2 |
+| 7 | selecionarSobremesas | iPhone 17 - 8 (resumo na 9) | 17–20 | FA2 |
+| 8 | informarEnderecoEntrega | iPhone 17 - 10 e 11 | 21–24 | – |
+| 9 | informarDadosCartao | iPhone 17 - 12 e 13 | 25 | – |
+| 10 | confirmarPedido | iPhone 17 - 17 (resultado em 18 e 19) | 26–32 | FA3 |
 
 ---
 
